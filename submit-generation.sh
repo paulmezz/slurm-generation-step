@@ -41,7 +41,7 @@ STEP_WORKER_SCRIPT="generation-step.sh"
 #The steps inside them
 
 
-for i in `seq 0 ${TOTAL_GENERATIONS}` ; do
+for GENERATION in `seq 0 ${TOTAL_GENERATIONS}` ; do
 
 cat << EOF >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 #!/bin/bash -l
@@ -61,8 +61,8 @@ cat << EOF >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 #SBATCH -J ${JOB_NAME}_${GENERATION} 
 
 # Standard out and Standard Error output files
-#SBATCH -o ${JOB_NAME}_${GENERATION}.stdout
-#SBATCH -e ${JOB_NAME}_${GENERATION}.stderr
+#SBATCH -o ${LOG_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.stdout
+#SBATCH -e ${LOG_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.stderr
 
 # Replace $USER with your username
 #SBATCH --mail-user $USER@rit.edu
@@ -85,10 +85,14 @@ if [ "$?" != "0" ] ; then
     echo "Email rc-help@rit.edu if you have any questions."
     echo "Aborting."
 else
-	echo magic!
-fi
-
 EOF
+
+for STEPNUMBER in `seq 0 ${NUM_STEPS}` ; do
+	echo srun -c 1 ${STEP_WORKER_SCRIPT} ${GENERATION} ${STEPNUMBER}
+done
+
+echo "fi" >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
+
 
 done
 
