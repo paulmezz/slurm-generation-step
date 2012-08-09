@@ -88,7 +88,7 @@ else
 	echo magic!
 fi
 
-EOF 
+EOF
 
 done
 
