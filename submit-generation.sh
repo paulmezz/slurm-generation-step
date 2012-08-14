@@ -112,14 +112,14 @@ JOBID_LIST[0]=$(sbatch --hold ${JOB_FILE_DIRECTORY}/${JOB_NAME}_0.sh | awk ' { p
 
 #Submit the rest and record JobId numbers  (Index = geneation)
 for GENERATION in $(seq 1 $( expr ${TOTAL_GENERATIONS} - 1)) ; do
-	JOBID_LIST[${GENERATION}]=$(sbatch --hold ${JOB_FILE_DIRECTORY}/${JOB_NAME}_0.sh | awk ' { print $4 }')
+	JOBID_LIST[${GENERATION}]=$(sbatch --hold ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh | awk ' { print $4 }')
 done
 
 #build epilogs (could be rolled into submit loop above, down here make debugs easier)
 #Start with Generation 0 and go to N - 1.  The last job does not get an epilog
 
-for GENERATION in $(seq 0 $( expr ${TOTAL_GENERATIONS} - 2)) ; do
-	echo "#release next job /($(expr ${GENERATION} + 1)/)" > ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.epilog.sh
+for GENERATION in $(seq 0 $( expr ${TOTAL_GENERATIONS} - 1)) ; do
+	echo "#release next job ( $(expr JOBID_LIST[${GENERATION}] + 1) )" > ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.epilog.sh
 done
 
 #scontrol update jobid=
