@@ -1,4 +1,4 @@
-#!/bin/bash -l
+#!/bin/bash
 
 #TODO
 #epilog magic
@@ -42,7 +42,8 @@ STEP_WORKER_SCRIPT="generation-step.sh"
 #The steps inside them
 ###############################################################################
 
-if [ -e "${JOB_FILE_DIRECTORY}/${JOB_NAME}_*.sh}" ] ; then echo "Error, job files exist" ; exit 1 ; fi
+#if any job files exit with this prefix, fail
+if [ "$(ls jobfiles/gen_*.sh 2> /dev/null)" ] ; then echo "Error, job files exist with this prefix" ; exit 1 ; fi
 
 #Begin Generation Loop#
 for GENERATION in $(seq 0 $( expr ${TOTAL_GENERATIONS} - 1)) ; do
