@@ -79,10 +79,6 @@ cat << EOF >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 #QOS to run under
 #SBATCH --qos=${SLURM_QOS}
 
-##Find the next job and release it when this one is done (could be AWK'd)
-##TODO - Needs and IF on the last job to not epilog
-#SBATCH --epilog='scontrol release $(squeue --noheader --format "%.i,%.j" | grep ",${JOB_NAME}_(expr ${GENERATION} + 1 )$" | cut -f 1 -d ,)'
-
 #Partition and CPUs required
 #SBATCH -p ${SLURM_PARTITION} -c ${NUM_STEPS}
 
@@ -96,16 +92,25 @@ if [ "$?" != "0" ] ; then
     echo "Email rc-help@rit.edu if you have any questions."
     echo "Aborting."
 else
+
 EOF
 
 #Begin Step Loop#
 for STEPNUMBER in $(seq 0 $(expr ${NUM_STEPS} - 1) ) ; do
-	echo srun -c 1 ${STEP_WORKER_SCRIPT} ${GENERATION} ${STEPNUMBER} >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
+	echo "srun -c 1 ${STEP_WORKER_SCRIPT} ${GENERATION} ${STEPNUMBER} &" >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 done
 #End Step Loop#
 
-#This is just the ending "fi" from the slurm environment check above
-echo "fi" >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
+cat << EOF >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
+#wait for above jobs to finish
+wait
+
+#release the next generation
+scontrol release \$(squeue --noheader --format "%.i,%.j" | grep ",${JOB_NAME}_$(expr ${GENERATION} + 1 )$" | cut -f 1 -d ,)
+
+fi
+
+EOF
 
 #Lets submit the new job file
 sbatch --hold ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
@@ -114,6 +119,4 @@ done
 #End Generation Loop#
 
 #TODO
-#release the hounds (aka job 0)
-
-
+#Release job 0
