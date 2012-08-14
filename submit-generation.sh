@@ -1,7 +1,9 @@
 #!/bin/bash
 
 #TODO
-#release generation 0 upon completion 
+#release generation 0 upon completion
+#don't try to run another generation on the last one
+#have a trigger on success to cancel remaining jobs
 
 # This defines a whole bunch of environment variables for us to use!
 #This can be omitted and hardcoded below if need-be.  PER USER OPTIONS
