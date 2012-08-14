@@ -2,7 +2,8 @@
 
 #TODO
 #epilog magic
-#put May's job calls in
+#if jobfiles exist, exit with error
+#actually submit!
 
 # This defines a whole bunch of environment variables for us to use!
 #This can be omitted and hardcoded below if need-be.  PER USER OPTIONS
@@ -39,9 +40,11 @@ STEP_WORKER_SCRIPT="generation-step.sh"
 #You shouldn't need to edit below this line. 
 #Below here are the loops to generate the generational job files with
 #The steps inside them
+###############################################################################
 
 
-for GENERATION in $(seq 0 ${TOTAL_GENERATIONS}) ; do
+#Begin Generation Loop#
+for GENERATION in $(seq 0 $( expr ${TOTAL_GENERATIONS} - 1)) ; do
 
 cat << EOF >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 #!/bin/bash -l
@@ -57,7 +60,7 @@ cat << EOF >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 # If you need any help, please email rc-help@rit.edu
 #
 
-# Name of the job - You'll probably want to customize this.
+# Name of the job
 #SBATCH -J ${JOB_NAME}_${GENERATION} 
 
 # Standard out and Standard Error output files
@@ -70,9 +73,13 @@ cat << EOF >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 # notify on state change: BEGIN, END, FAIL or ALL
 #SBATCH --mail-type=ALL
 
-##10 min runtime
+#Runtime Required
 #SBATCH -t ${SLURM_WALLCLOCK} 
 
+#QOS to run under
+#SBATCH --qos=${SLURM_QOS}
+
+#Partition and CPUs required
 #SBATCH -p ${SLURM_PARTITION} -c ${NUM_STEPS}
 
 # Job memory requirements in MB
@@ -87,12 +94,26 @@ if [ "$?" != "0" ] ; then
 else
 EOF
 
+#Begin Step Loop#
 for STEPNUMBER in $(seq 0 $(expr ${NUM_STEPS} - 1) ) ; do
 	echo srun -c 1 ${STEP_WORKER_SCRIPT} ${GENERATION} ${STEPNUMBER} >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 done
+#End Step Loop#
 
+#This is just the ending "fi" from the slurm environment check above
 echo "fi" >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 
-
 done
+#End Generation Loop#
+
+#Files are generated.... reloop
+#Submit first job
+JOBID_LIST[0]=$(sbatch --hold ${JOB_FILE_DIRECTORY}/${JOB_NAME}_0.sh | awk ' { print $4 }')
+for GENERATION in $(seq 1 $( expr ${TOTAL_GENERATIONS} - 1)) ; do
+	JOBID_LIST[$(GENERATION})]=$(sbatch --hold ${JOB_FILE_DIRECTORY}/${JOB_NAME}_0.sh | awk ' { print $4 }')
+done
+
+#Now that all the jobs are submittied, update with proper epilog and release job 0
+
+#Name to JobID logic: squeue --noheader --format "%.i,%.j" | grep ",$*$" | cut -f 1 -d ,
 
