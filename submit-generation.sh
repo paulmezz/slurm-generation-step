@@ -7,7 +7,7 @@
 
 # This defines a whole bunch of environment variables for us to use!
 #This can be omitted and hardcoded below if need-be.  PER USER OPTIONS
-source configuration_0809twoweek.sh
+source example_config.sh
 
 #IMPORTANT!!!!   CHANGE THESE#
 SLURM_QOS="rc-normal"
@@ -24,14 +24,14 @@ LOG_FILE_DIRECTORY="./logs"
 if [ ! -d ${LOG_FILE_DIRECTORY} ] ; then mkdir -p ${LOG_FILE_DIRECTORY} ; fi
 
 #Total number of generations to run through
-TOTAL_GENERATIONS=${num_generations}
+TOTAL_GENERATIONS=${NUM_GENERATIONS}
 
 #Number of job steps to run per generaion
-NUM_STEPS=${num_particles_per_gen}
+NUM_STEPS=${NUM_THREADS}
 
 # Just a constant variable used throughout the script to name our jobs
-#   in a meaningful way.
-JOB_NAME=${name}
+# in a meaningful way.
+JOB_NAME=${JOB_PREFIX}
 
 #This is the actual file called to do the work (once per step)
 #In this setup, it will need to be called with two arguments, generation and step
@@ -42,6 +42,7 @@ STEP_WORKER_SCRIPT="generation-step.sh"
 #The steps inside them
 ###############################################################################
 
+if [ -e "${JOB_FILE_DIRECTORY}/${JOB_NAME}_*.sh}" ] ; then echo "Error, job files exist" ; exit 1 ; fi
 
 #Begin Generation Loop#
 for GENERATION in $(seq 0 $( expr ${TOTAL_GENERATIONS} - 1)) ; do
