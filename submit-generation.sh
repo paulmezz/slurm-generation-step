@@ -1,9 +1,7 @@
 #!/bin/bash
 
 #TODO
-#epilog magic
-#if jobfiles exist, exit with error
-#actually submit!
+#release generation 0 upon completion 
 
 # This defines a whole bunch of environment variables for us to use!
 #This can be omitted and hardcoded below if need-be.  PER USER OPTIONS
