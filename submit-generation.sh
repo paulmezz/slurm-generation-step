@@ -28,6 +28,8 @@ TOTAL_GENERATIONS=${NUM_GENERATIONS}
 
 #Number of job steps to run per generaion
 NUM_STEPS=${NUM_THREADS}
+#How many threads does each step require?  (usually 1 aka single threaded app)
+THREADS_PER_STEP=1
 
 # Just a constant variable used throughout the script to name our jobs
 # in a meaningful way.
@@ -82,7 +84,7 @@ cat << EOF >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 #SBATCH --qos=${SLURM_QOS}
 
 #Partition and CPUs required
-#SBATCH -p ${SLURM_PARTITION} -c ${NUM_STEPS}
+#SBATCH -p ${SLURM_PARTITION} -n ${NUM_STEPS} -c ${THREADS_PER_STEP}
 
 # Job memory requirements in MB
 #SBATCH --mem=${SLURM_MEMORY_REQ}
