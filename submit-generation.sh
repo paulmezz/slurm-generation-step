@@ -109,11 +109,20 @@ done
 #Files are generated.... reloop
 #Submit first job
 JOBID_LIST[0]=$(sbatch --hold ${JOB_FILE_DIRECTORY}/${JOB_NAME}_0.sh | awk ' { print $4 }')
+
+#Submit the rest and record JobId numbers  (Index = geneation)
 for GENERATION in $(seq 1 $( expr ${TOTAL_GENERATIONS} - 1)) ; do
-	JOBID_LIST[$(GENERATION})]=$(sbatch --hold ${JOB_FILE_DIRECTORY}/${JOB_NAME}_0.sh | awk ' { print $4 }')
+	JOBID_LIST[${GENERATION}]=$(sbatch --hold ${JOB_FILE_DIRECTORY}/${JOB_NAME}_0.sh | awk ' { print $4 }')
 done
 
-#Now that all the jobs are submittied, update with proper epilog and release job 0
+#build epilogs (could be rolled into submit loop above, down here make debugs easier)
+#Start with Generation 0 and go to N - 1.  The last job does not get an epilog
 
-#Name to JobID logic: squeue --noheader --format "%.i,%.j" | grep ",$*$" | cut -f 1 -d ,
+for GENERATION in $(seq 0 $( expr ${TOTAL_GENERATIONS} - 2)) ; do
+	echo "#release next job /($(expr ${GENERATION} + 1)/)" > ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.epilog.sh
+done
+
+#scontrol update jobid=
+#release the hounds
+
 
