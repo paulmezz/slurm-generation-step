@@ -45,7 +45,7 @@ STEP_WORKER_SCRIPT="generation-step.sh"
 ###############################################################################
 
 #if any job files exit with this prefix, fail
-if [ "$(ls jobfiles/gen_*.sh 2> /dev/null)" ] ; then echo "Error, job files exist with this prefix" ; exit 1 ; fi
+if [ "$(ls jobfiles/${JOB_PREFIX}_*.sh 2> /dev/null)" ] ; then echo "Error, job files exist with this prefix" ; exit 1 ; fi
 
 #Begin Generation Loop#
 for GENERATION in $(seq 0 $( expr ${TOTAL_GENERATIONS} - 1)) ; do
