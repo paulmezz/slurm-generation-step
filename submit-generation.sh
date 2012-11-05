@@ -2,47 +2,28 @@
 
 #TODO
 #release generation 0 upon completion
-#don't try to run another generation on the last one
 #have a trigger on success to cancel remaining jobs
 
-# This defines a whole bunch of environment variables for us to use!
-#This can be omitted and hardcoded below if need-be.  PER USER OPTIONS
-source example_config.sh
+#Pull the config then do sanity tests
+if [ -e config.sh ] ; then source config.sh ; else echo config file missing! ; exit 1 ; fi
 
-#IMPORTANT!!!!   CHANGE THESE#
-SLURM_QOS="rc-normal"
-SLURM_PARTITION="debug"
-SLURM_MEMORY_REQ="30"
-SLURM_WALLCLOCK="0:10:0"
+if [ -z "$JOB_NAME" ] ; then echo "JOB_NAME not defined, this is used to prefix all jobs and logs (it should be unique per data set)" ; exit 1 ; fi
 
-#Where are the job files being created before sumbission?
-JOB_FILE_DIRECTORY="./jobfiles"
-if [ ! -d ${JOB_FILE_DIRECTORY} ] ; then mkdir -p ${JOB_FILE_DIRECTORY} ; fi
+if [ -z "$JOB_FILE_DIRECTORY" ] ; then echo JOB_FILE_DIRECTORY not defined, this is where the job files are kept ; exit 1 ; fi
+if [ ! -d ${JOB_FILE_DIRECTORY} ] ; then creating job file directory: $JOB_FILE_DIRECTORY ; mkdir -p ${JOB_FILE_DIRECTORY} ; fi
 
-#Where do we dump log files?  (stdout and stderr)
-LOG_FILE_DIRECTORY="./logs"
-if [ ! -d ${LOG_FILE_DIRECTORY} ] ; then mkdir -p ${LOG_FILE_DIRECTORY} ; fi
+if [ -z "$LOG_FILE_DIRECTORY" ] ; then echo "Warning: LOG_FILE_DIRECTORY not defined, this is where the log files are kept." ; echo "You should ctrl-c a few times and fix this or else you may end up with lots of files in annoying places." ; echo "You have 15 seconds." ; sleep 15 ; fi
+if [ ! -d ${LOG_FILE_DIRECTORY} ] ; then echo "LOG_FILE_DIRECTORY $LOG_FILE_DIRECTORY not found, creating" ; mkdir -p ${LOG_FILE_DIRECTORY} ; fi
 
-#Total number of generations to run through
-TOTAL_GENERATIONS=${NUM_GENERATIONS}
+if [ -z "$TOTAL_GENERATIONS" ] ; then echo "TOTAL_GENERATIONS not defined, this is how many generations deep the job is." ; exit 1 ; fi
+if [ -z "$NUM_STEPS" ] ; then echo "NUM_STEPS not defined, this is how many workers run per generation." ; exit 1 ; fi
+if [ -z "$THREADS_PER_STEP" ] ; then echo "THREADS_PER_STEP not defined, this is how many processors each step requires." ; exit 1 ; fi
+if [ -z "$STEP_WORKER_SCRIPT" ] ; then echo "STEP_WORKER_SCRIPT not defined, this is what is run on every job step." ; exit 1 ; fi
 
-#Number of job steps to run per generaion
-NUM_STEPS=${NUM_THREADS}
-#How many threads does each step require?  (usually 1 aka single threaded app)
-THREADS_PER_STEP=1
-
-# Just a constant variable used throughout the script to name our jobs
-# in a meaningful way.
-JOB_NAME=${JOB_PREFIX}
-
-#This is the actual file called to do the work (once per step)
-#In this setup, it will need to be called with two arguments, generation and step
-STEP_WORKER_SCRIPT="generation-step.sh"
-
-#You shouldn't need to edit below this line. 
+#End sanity tests
+###############################################################################
 #Below here are the loops to generate the generational job files with
 #The steps inside them
-###############################################################################
 
 #if any job files exit with this prefix, fail
 if [ "$(ls jobfiles/${JOB_PREFIX}_*.sh 2> /dev/null)" ] ; then echo "Error, job files exist with this prefix" ; exit 1 ; fi
@@ -110,7 +91,9 @@ cat << EOF >> ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 wait
 
 #release the next generation
-scontrol release \$(squeue --noheader --format "%.i,%.j" | grep ",${JOB_NAME}_$(expr ${GENERATION} + 1 )$" | cut -f 1 -d ,)
+if [ "$GENERATION" -lt "$TOTAL_GENERATIONS" ] then
+	scontrol release \$(squeue --noheader --format "%.i,%.j" | grep ",${JOB_NAME}_$(expr ${GENERATION} + 1 )$" | cut -f 1 -d ,)
+fi
 
 fi
 
@@ -122,5 +105,3 @@ sbatch --hold ${JOB_FILE_DIRECTORY}/${JOB_NAME}_${GENERATION}.sh
 done
 #End Generation Loop#
 
-#TODO
-#Release job 0
