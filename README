@@ -1,0 +1,4 @@
+This simple set of scripts are for generating slurm job files for generational runs.
+
+One job file is generated per generation with the workers being spawned via srun.
+
